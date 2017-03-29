@@ -5,6 +5,34 @@ defmodule Identicon do
     |> pick_color
     |> build_grid
     |> filter_odd_squares
+    |> build_pixel_map
+    |> create_image
+    |> save_image(input)
+  end
+
+  def save_image(image, name) do
+    :egd.save(image, name)
+  end
+
+  def build_pixel_map(%Identicon.Image{grid: grid} = image) do
+    pixel_map = Enum.map grid, fn({_code, index}) ->
+      horizontal = rem(index, 5) * 50
+      vertical = div(index, 5) * 50
+      top_left = {horizontal, vertical}
+      bottom_right = { horizontal + 50 , vertical + 50 }
+      { top_left, bottom_right }
+    end
+
+    %Identicon.Image{ image | pixel_map: pixel_map }
+  end
+
+  def create_image(%Identicon.Image{pixel_map: pixel_map , color: color}) do
+    image = :egd.create(250, 250)
+    fill_color = :egd.color(color)
+    Enum.each pixel_map, fn({ top_left, bottom_right }) ->
+      :egd.filledRectangle(image, top_left, bottom_right, fill_color )
+    end
+    :egd.render(image)
   end
 
   def filter_odd_squares(%Identicon.Image{grid: grid} = image) do
